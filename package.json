@@ -1,0 +1,24 @@
+{
+  "name": "florilegia",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^1.4.5"
+  },
+  "dependencies": {
+    "immutable": "^3.8.1",
+    "normalize.css": "^5.0.0",
+    "prosemirror": "^0.10.1",
+    "react": "^15.3.2",
+    "react-dom": "^15.3.2",
+    "react-hyperscript": "^2.4.1",
+    "rebass": "^0.4.0-beta.8"
+  }
+}
