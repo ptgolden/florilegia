@@ -9,8 +9,16 @@
   </head>
 
   <body>
+    <h1>ok</h1>
     <script type="text/javascript">
-      require('./src/renderer.js')
+      const h = require('react-hyperscript')
+          , { render } = require('react-dom')
+          , el = document.createElement('div')
+          , Application = require('./src/Application')
+
+      document.body.appendChild(el);
+
+      render(Application({}), el);
     </script>
   </body>
 </html>
