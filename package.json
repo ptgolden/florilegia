@@ -5,14 +5,15 @@
   "main": "window.js",
   "scripts": {
     "start": "electron .",
-    "rebuild": "electron-rebuild"
+    "rebuild": "electron-rebuild",
+    "test": "tape ./src/test/*.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "electron": "^1.6.2",
-    "electron-rebuild": "^1.5.7"
+    "blue-tape": "^1.0.0",
+    "electron": "1.5.1"
   },
   "dependencies": {
     "concat-stream": "^1.6.0",
@@ -23,8 +24,10 @@
     "levelgraph": "^2.0.1",
     "levelgraph-n3": "^2.0.0",
     "normalize.css": "^5.0.0",
-    "pdf2oac": "^3.0.3",
+    "pdf2oac": "^5.2.0",
     "prosemirror": "^0.10.1",
+    "pump": "^1.0.2",
+    "ramda": "^0.23.0",
     "react": "^15.3.2",
     "react-dom": "^15.3.2",
     "react-hyperscript": "^2.4.1",
@@ -34,6 +37,7 @@
     "redux-immutablejs": "0.0.8",
     "reflexbox": "^2.2.3",
     "shortid": "^2.2.8",
+    "through2": "^2.0.3",
     "tmp": "0.0.31",
     "union-type": "ptgolden/union-type"
   }

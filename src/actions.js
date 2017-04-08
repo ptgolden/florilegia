@@ -1,83 +1,123 @@
 "use strict";
 
 const fs = require('fs')
-    , tmp = require('tmp')
-    , shortid = require('shortid')
-    , { getAnnotations } = require('pdf2oac')
-    , annotsToOAC = require('pdf2oac/oac')
-
-const {
-  LIST_DOCUMENTS,
-  GENERAL_ERROR,
-} = require('./consts')
+    , path = require('path')
+    , N3 = require('n3')
+    , pump = require('pump')
+    , concat = require('concat-stream')
+    , through = require('through2')
+    , parseAnnots = require('pdf2oac')
+    , ld = require('./ld')
 
 module.exports = {
-  addError,
-
-  listDocuments,
-  addPDFDocument,
+  listNotebooks,
+  addNotebook,
+  getPDFDocument,
 }
 
 
-function addError(msg) {
-  return {
-    type: GENERAL_ERROR,
-    msg
+
+/*
+function dumpTurtle(graph=null) {
+  return async (dispatch, getState, { graphDB }) => {
+    const docs = await new Promise((resolve, reject) =>
+      pump(
+        graphDB.getStream({}),
+        N3.StreamWriter({ prefixes: ld.prefixes }),
+        concat(data => {
+          resolve(data)
+        }))
+      .on('error', reject)
+    )
+
+    return docs;
+  }
+}
+*/
+
+function listNotebooks() {
+  return async (dispatch, getState, { graphDB }) => {
+    const { $ } = ld
+        , db = graphDB
+
+    const docs = await new Promise((resolve, reject) =>
+      db.search(
+        $(db.v('uri'))({
+          'rdf:type': 'flor:Notebook',
+          'rdfs:label': db.v('name'),
+          'dce:description': db.v('description')
+        }), (err, list) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+
+          resolve(list)
+        }))
+
+    return docs;
   }
 }
 
-function listDocuments(project) {
-  return dispatch => {
-    fs.readDir(`projects/${project}/documents`, (err, files) => {
-      if (err) {
-        dispatch({
-          GENERAL_ERROR,
-          msg: `Could not open documents for project ${project}`
-        })
+function getPDFDocument(pdfURI) {
+  return async (dispatch, getState, { pdfDB }) => {
+    await new Promise((resolve, reject) =>
+      pump(pdfDB.createReadStream(pdfURI), concat(data => {
+        data;
+      })).on('error', reject).on('done', resolve))
+  }
+}
 
-        return;
+function addNotebook(pdfFilename, name, description) {
+  const {
+    notebookTriples,
+    notebookURI,
+    pdfURI,
+    annotCollectionURI
+  } = ld.generateNotebook(path.basename(pdfFilename), name, description)
+
+  return async (dispatch, getState, { graphDB, pdfDB }) => {
+    await new Promise((resolve, reject) => {
+      fs.createReadStream(pdfFilename)
+        .on('error', reject)
+        .pipe(pdfDB.createWriteStream(pdfURI))
+        .on('error', reject)
+        .on('close', () => resolve())
+    })
+
+    await new Promise((resolve, reject) => {
+      const opts = {
+        pdfURI,
+        graphURI: notebookURI,
+        baseURI: notebookURI + '#',
       }
 
-      dispatch({
-        type: LIST_DOCUMENTS,
-        docs: files
-      })
+      let first = true
+
+      const annotStream = pump(parseAnnots(pdfFilename, opts), through.obj(function (triple, enc, cb) {
+        if (first) {
+          notebookTriples.forEach(triple => {
+            this.push(triple);
+          })
+
+          first = false;
+        }
+
+        if (ld.matchesType('oa:Annotation', triple)) {
+          this.push(ld.$.withGraph(notebookURI)(annotCollectionURI)('pcdm:hasPart')(triple.subject));
+        }
+
+        this.push(triple)
+        cb();
+      }))
+
+      annotStream
+        .on('error', reject)
+        .pipe(graphDB.putStream())
+        .on('error', reject)
+        .on('close', () => resolve())
     })
-  }
-}
 
-const imageDir = tmp.dirSync();
-
-function addPDFDocument(pdfFilename, pdfReadstream) {
-  const id = shortid.generate()
-
-  return (dispatch, { graph, pdfStore }) => {
-    const pdfFile = tmp.fileSync
-        , a = fs.createWriteStream(pdfFile.name)
-        , b = pdfStore.createWriteStream(`${id}.pdf`)
-
-    pdfReadstream.pipe(a);
-    pdfReadstream.pipe(b);
-
-    a.on('finish', () => {
-      const annots = getAnnotations(pdfFile.name, imageDir.name)
-
-      const writeStream = graph.n3.putStream()
-
-      annotsToOAC(annots, {
-        imageDirectory: imageDir.name,
-        baseURI: `florilegia-internal:items#`,
-        pdfURI: `florilegia-internal:files#${pdfFilename}`,
-        outstream: writeStream
-      });
-
-      writeStream.on('error', err => {
-        throw err;
-      })
-
-      writeStream.on('finish', () => {
-        process.stdout.write('finished\n')
-      })
-    })
+    return;
   }
 }
