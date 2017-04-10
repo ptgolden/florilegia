@@ -35,6 +35,7 @@
     "rebass": "^0.4.0-beta.8",
     "redux": "^3.6.0",
     "redux-immutablejs": "0.0.8",
+    "redux-thunk": "^2.2.0",
     "reflexbox": "^2.2.3",
     "shortid": "^2.2.8",
     "through2": "^2.0.3",
