@@ -9,6 +9,28 @@ const thunk = require('redux-thunk').default
     , rootReducer = require('./reducers')
     , { ApplicationState } = require('./records')
 
+
+function isUnionTypeRecord(obj) {
+  return '_keys' in obj && '_name' in obj && 'caseOn' in obj;
+}
+
+const unionTypeMiddleware = store => next => action => {
+  if (action.constructor === Object) {
+    if (!isUnionTypeRecord(action)) {
+      throw new Error('Actions should be called by creating a union type record.')
+    }
+
+    const type = action._name;
+
+    return next({
+      type,
+      case: action.case.bind(action),
+    })
+  }
+
+  return next(action)
+}
+
 module.exports = function initStore(directory, initialState) {
   const db = sublevel(levelup(directory))
       , graphDB = levelgraph(db.sublevel('graph'))
@@ -19,9 +41,8 @@ module.exports = function initStore(directory, initialState) {
 
   const store = createStore(
     rootReducer,
-    (initialState || new ApplicationState()),
     compose(
-      applyMiddleware(thunk.withExtraArgument(exposedStorage)),
+      applyMiddleware(unionTypeMiddleware, thunk.withExtraArgument(exposedStorage)),
       (global.window || {}).devToolsExtension ? window.devToolsExtension() : a => a
     )
   )

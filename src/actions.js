@@ -2,12 +2,12 @@
 
 const fs = require('fs')
     , path = require('path')
-    , N3 = require('n3')
     , pump = require('pump')
     , concat = require('concat-stream')
     , through = require('through2')
     , parseAnnots = require('pdf2oac')
     , ld = require('./ld')
+    , { Actions, Notebook } = require('./consts')
 
 module.exports = {
   listNotebooks,
@@ -55,7 +55,11 @@ function listNotebooks() {
           resolve(list)
         }))
 
-    return docs;
+    dispatch(Actions.SetAvailableNotebooks(
+      docs.map(Notebook.NotebookOf)
+    ))
+
+    return;
   }
 }
 

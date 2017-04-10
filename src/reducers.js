@@ -1,26 +1,32 @@
 "use strict";
 
-const { createReducer } = require('redux-immutablejs')
-    , { ApplicationState } = require('./records')
+function extend(toObj, withObj) {
+  return Object.assign({}, toObj, withObj)
+}
 
-const {
-  LIST_DOCUMENTS,
-  OPEN_DOCUMENT,
-  GENERAL_ERROR,
-} = require('./consts')
+function cleanRecord(record) {
+  const ret = {}
 
+  record._keys.forEach(k => {
+    ret[k] = record[k];
+  })
 
+  return ret;
+}
 
-module.exports = createReducer(new ApplicationState(),  {
-  [GENERAL_ERROR]: (state, action) => {
-    const { msg } = action
+const initialState = {
+  availableNotebooks: [],
+}
 
-    return state.update('errors', errors => errors.push(msg))
-  },
+function app(state=initialState, action) {
+  if (action.type === '@@redux/INIT') return state;
 
-  [LIST_DOCUMENTS]: (state, action) =>
-    state.set('availableDocuments', action.docs),
+  return action.case({
+    SetAvailableNotebooks(availableNotebooks)  {
+      availableNotebooks = availableNotebooks.map(cleanRecord);
+      return extend(state, { availableNotebooks });
+    }
+  })
+}
 
-  [OPEN_DOCUMENT]: (state, action) =>
-    state.set('openedDocument', action.doc),
-})
+module.exports = app;

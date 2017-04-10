@@ -56,9 +56,9 @@ test('Saving a pdf', async t => {
     const pdf = path.join(__dirname, '../../node_modules/pdf2oac/js/test/pdfs/1_comment/evince.pdf')
 
     await store.dispatch(actions.addNotebook(pdf, 'test notebook', 'it\'s a test notebook'));
-    const docs = await store.dispatch(actions.listNotebooks())
+    await store.dispatch(actions.listNotebooks())
 
-    t.equal(docs.length, 1, 'should have one document in the database after saving')
+    t.equal(store.getState().availableNotebooks.length, 1, 'should have one document in the database after saving')
 
 
   } catch (err) {
