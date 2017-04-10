@@ -15,8 +15,6 @@ module.exports = {
   getPDFDocument,
 }
 
-
-
 /*
 function dumpTurtle(graph=null) {
   return async (dispatch, getState, { graphDB }) => {
@@ -37,15 +35,12 @@ function dumpTurtle(graph=null) {
 
 function listNotebooks() {
   return async (dispatch, getState, { graphDB }) => {
-    const { $ } = ld
-        , db = graphDB
-
     const docs = await new Promise((resolve, reject) =>
-      db.search(
-        $(db.v('uri'))({
+      graphDB.search(
+        ld.$(graphDB.v('uri'))({
           'rdf:type': 'flor:Notebook',
-          'rdfs:label': db.v('name'),
-          'dce:description': db.v('description')
+          'rdfs:label': graphDB.v('name'),
+          'dce:description': graphDB.v('description')
         }), (err, list) => {
           if (err) {
             reject(err);
