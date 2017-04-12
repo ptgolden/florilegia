@@ -1,19 +1,11 @@
 "use strict";
 
-const h = require('react-hyperscript')
-    , path = require('path')
+const path = require('path')
+    , h = require('react-hyperscript')
     , React = require('react')
-    , thunk = require('redux-thunk').default
-    , levelup = require('level')
-    , levelstore = require('level-store')
-    , levelgraph = require('levelgraph')
-    , levelgraphN3 = require('levelgraph-n3')
-    , sublevel = require('level-sublevel')
     , { Provider } = require('react-redux')
-    , { createStore, applyMiddleware, compose } = require('redux')
-    , rootReducer = require('./reducers')
+    , makeStore = require('./store')
     // , LayoutPanel = require('./components/Panel')
-    , { ApplicationState } = require('./records')
 
 
 const Root = React.createClass({
@@ -87,43 +79,31 @@ const Root = React.createClass({
     }
   },
 
+  componentDidMount() {
+    const { listNotebooks } = require('./actions')
+    this.props.store.dispatch(listNotebooks());
+  },
+
 
   render() {
     const { store } = this.props
+        , AddDocument = require('./components/AddDocument')
+        , NotebookList = require('./components/NotebookList')
 
     return (
       h(Provider, { store }, h('div #main', [
         h('h1', 'Florilegia'),
-        h('h2', 'the text')
+        h(AddDocument),
+
+        h(NotebookList),
       ]))
     )
   }
 })
 
-function openDB() {
-  if (!openDB._db) {
-    const directory = path.normalize(path.join(__dirname, '..', 'data'))
-
-    const db = sublevel(levelup(directory))
-        , graph = levelgraphN3(levelgraph(db.sublevel('graph')))
-        , pdfStore = levelstore(db.sublevel('pdfs'))
-
-    openDB._db = { graph, pdfStore }
-  }
-
-  return openDB._db;
-}
 
 module.exports = ({ initialState }) => {
-  const store = createStore(
-    rootReducer,
-    (initialState || new ApplicationState()),
-    compose(
-      applyMiddleware(thunk.withExtraArgument(Object.assign({}, openDB()))),
-      (window || {}).devToolsExtension ? window.devToolsExtension() : a => a
-    )
-  )
-
+  const store = makeStore(path.join(__dirname, '..', 'data'), initialState)
 
   return h(Root, { store });
 

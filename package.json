@@ -13,11 +13,12 @@
   "license": "ISC",
   "devDependencies": {
     "blue-tape": "^1.0.0",
-    "electron": "1.5.1"
+    "electron": "^1.6.2"
   },
   "dependencies": {
     "concat-stream": "^1.6.0",
     "immutable": "^3.8.1",
+    "jsonld": "^0.4.11",
     "level": "^1.6.0",
     "level-store": "^3.11.0",
     "level-sublevel": "^6.6.1",

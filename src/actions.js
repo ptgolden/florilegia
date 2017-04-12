@@ -1,18 +1,22 @@
 "use strict";
 
 const fs = require('fs')
+    , N3 = require('n3')
     , path = require('path')
     , pump = require('pump')
+    , jsonld = require('jsonld')
     , concat = require('concat-stream')
     , through = require('through2')
     , parseAnnots = require('pdf2oac')
     , ld = require('./ld')
-    , { Actions, Notebook } = require('./consts')
+    , { $ } = ld
+    , { Actions, Notebook } = require('./types')
 
 module.exports = {
   listNotebooks,
   addNotebook,
   getPDFDocument,
+  getAnnotsForNotebook,
 }
 
 /*
@@ -33,26 +37,67 @@ function dumpTurtle(graph=null) {
 }
 */
 
+function search(graphDB, fn, materialized) {
+  const args = [fn(graphDB)].concat(materialized ? [{ materialized }] : [])
+
+  return new Promise((resolve, reject) =>
+    graphDB.search(...args, (err, results) => {
+      if (err) reject(err);
+      resolve(results)
+    }))
+}
+
+function get(graphDB, pattern) {
+  return new Promise((resolve, reject) =>
+    graphDB.get(pattern, (err, results) => {
+      if (err) reject(err);
+      resolve(results)
+    }))
+}
+
 function listNotebooks() {
   return async (dispatch, getState, { graphDB }) => {
-    const docs = await new Promise((resolve, reject) =>
-      graphDB.search(
-        ld.$(graphDB.v('uri'))({
-          'rdf:type': 'flor:Notebook',
-          'rdfs:label': graphDB.v('name'),
-          'dce:description': graphDB.v('description')
-        }), (err, list) => {
-          if (err) {
-            reject(err);
-            return;
-          }
-
-          resolve(list)
-        }))
+    const docs = await search(graphDB, db =>
+      $(db.v('uri'))({
+        'rdf:type': 'flor:Notebook',
+        'rdfs:label': db.v('name'),
+        'dce:description': db.v('description')
+      }))
 
     dispatch(Actions.SetAvailableNotebooks(
       docs.map(Notebook.NotebookOf)
     ))
+
+    return;
+  }
+}
+
+function getAnnotsForNotebook(notebookURI) {
+  return async (dispatch, getState, { graphDB }) => {
+    let rdf;
+    console.log('loading');
+
+    await new Promise((resolve, reject) =>
+      pump(
+        graphDB.getStream({ graph: notebookURI }),
+        N3.StreamWriter({ format: 'N-triples' }),
+        concat(_rdf => {
+          rdf = _rdf;
+          resolve()
+        })).on('error', reject))
+
+    const doc = await jsonld.promises.fromRDF(rdf)
+
+    const normalized = await jsonld.promises.frame(doc, {
+      "@context": Object.assign({}, ld.prefixes, {
+        'type': '@type',
+        'Annotation': 'oa:Annotation'
+      })
+    })
+
+    const annots = normalized['@graph'].filter(item => item.type === 'Annotation')
+
+    console.log(annots);
 
     return;
   }

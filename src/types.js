@@ -12,7 +12,7 @@ const Notebook = Type({ Notebook: {
 const Actions = Type({
   SetAvailableNotebooks: {
     documents: Type.ListOf(Notebook)
-  },
+  }
 })
 
 exports.Notebook = Notebook;

@@ -58,7 +58,9 @@ test('Saving a pdf', async t => {
     await store.dispatch(actions.addNotebook(pdf, 'test notebook', 'it\'s a test notebook'));
     await store.dispatch(actions.listNotebooks())
 
-    t.equal(store.getState().availableNotebooks.length, 1, 'should have one document in the database after saving')
+    const { availableNotebooks } = store.getState()
+
+    await store.dispatch(actions.getAnnotsForNotebook(store.getState().availableNotebooks[0].uri));
 
 
   } catch (err) {
