@@ -37,8 +37,8 @@ test('Creating a store', async t => {
     store.dispatch((dispatch, getState, extraArgs) => {
       t.deepEqual(
         Object.keys(extraArgs),
-        ['graphDB', 'pdfDB'],
-        'should pass graphDB and pdfDB to action creators dispatched on store')
+        ['pdfDB', 'annotDB', 'notebookDB'],
+        'should pass sublevels to action creators dispatched on store')
     })
   } catch (err) {
     writeError(err);
@@ -60,8 +60,11 @@ test('Saving a pdf', async t => {
 
     const { availableNotebooks } = store.getState()
 
-    await store.dispatch(actions.getAnnotsForNotebook(store.getState().availableNotebooks[0].uri));
+    t.equal(availableNotebooks.length, 1);
 
+    await store.dispatch(actions.getAnnotsForNotebook(store.getState().availableNotebooks[0].id));
+
+    t.equal(store.getState().openedSource.annotations.length, 1);
 
   } catch (err) {
     writeError(err);

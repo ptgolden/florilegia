@@ -33,11 +33,12 @@ const unionTypeMiddleware = store => next => action => {
 
 module.exports = function initStore(directory, initialState) {
   const db = sublevel(levelup(directory))
-      , graphDB = levelgraph(db.sublevel('graph'))
       , pdfDB = levelstore(db.sublevel('pdfs'))
+      , annotDB = db.sublevel('annots', { valueEncoding: 'json' })
+      , notebookDB = db.sublevel('notebooks', { valueEncoding: 'json' })
 
   // Storage mechanisms which will be exposed as arguments to actions
-  const exposedStorage = { graphDB, pdfDB }
+  const exposedStorage = { pdfDB, annotDB, notebookDB }
 
   const store = createStore(
     rootReducer,

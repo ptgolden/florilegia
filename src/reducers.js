@@ -15,7 +15,9 @@ function cleanRecord(record) {
 }
 
 const initialState = {
+  loadingDocuments: {},
   availableNotebooks: [],
+  openedSource: null,
 }
 
 function app(state=initialState, action) {
@@ -24,8 +26,27 @@ function app(state=initialState, action) {
   return action.case({
     SetAvailableNotebooks(availableNotebooks)  {
       availableNotebooks = availableNotebooks.map(cleanRecord);
-      return extend(state, { availableNotebooks });
-    }
+      return extend(state, {
+        availableNotebooks
+      });
+    },
+
+    SetOpenAnnotations(source, annotations) {
+      return extend(state, {
+        openedSource: {
+          source,
+          annotations
+        }
+      })
+    },
+
+    SetDocumentLoadProgress(filename, progress) {
+      return extend(state, {
+        loadingDocuments: extend(state.loadingDocuments, {
+          [filename]: progress
+        })
+      })
+    },
   })
 }
 

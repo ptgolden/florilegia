@@ -1,115 +1,70 @@
 "use strict";
 
-const R = require('ramda')
-    , shortid = require('shortid')
+const shortid = require('shortid')
     , { Util } = require('n3')
 
 const prefixes = Object.assign({}, require('pdf2oac/js/prefixes'), {
   pcdm: 'http://pcdm.org/models#',
   flor: 'http://purl.org/florilegia/ns#',
-  florGraph: 'flor://graph/',
-  florFiles: 'flor://files/'
 })
 
-const builder = require('rdf-builder')({ prefixes })
+function expand(name) {
+  return Util.expandPrefixedName(name, prefixes)
+}
+
+const idOf = type => ({ '@id': type, '@type': '@id' })
+
+const context = Object.assign({}, prefixes, {
+  // Internal identifier prefixes, meant to be overridden on export
+  _data: 'flor://data/',
+  _files: 'flor://files/',
+
+  id: '@id',
+  type: '@type',
+
+  Notebook: 'flor:Notebook',
+
+  motivation: idOf('oa:hasMotivation'),
+  conformsTo: idOf('oa:conformsTo'),
+  source: idOf('oa:hasSource'),
+  selector: idOf('oa:hasSelector'),
+  target: idOf('oa:hasTarget'),
+  body: idOf('oa:hasBody'),
+
+  description: 'dce:description',
+  label: 'rdfs:label',
+  value: 'rdf:value',
+
+  hasFile: idOf('pcdm:hasFile')
+})
 
 function generateNotebook(filename, name='', description='') {
-  const id = shortid.generate()
-      , notebookURI = prefixes.florGraph + id
-      , $ = builder.withGraph(notebookURI)
-
-  const $container = $(notebookURI)
-      , $document = $(notebookURI + ':document')
-      , $annots = $(notebookURI + ':annots')
-      , pdfURI = `${prefixes.florFiles}${id}:${filename}`
-
-  const triples = [].concat(
-    $container({
-      'rdf:type': 'flor:Notebook',
-      'pcdm:hasMember': [$document, $annots],
-      'rdfs:label': Util.createLiteral(name),
-      'dce:description': Util.createLiteral(description),
-    }),
-
-    $document({
-      'rdf:type': 'pcdm:Object',
-      'pcdm:hasFile': pdfURI
-    }),
-
-    $annots({
-      'rdf:type': 'flor:AnnotationCollection',
-    })
-  )
+  const id = `_data:notebooks/${shortid.generate()}`
+      , pdfURI = `_files:pdfs/${id}`
 
   return {
-    notebookTriples: triples,
-    notebookURI,
-    pdfURI,
-    annotCollectionURI: $annots.subject
+    "@context": {
+      "@base": id + '#'
+    },
+    id,
+    type: 'Notebook',
+    name,
+    description,
+
+    document: {
+      id: 'document',
+      type: 'pcdm:Object',
+      'hasFile': pdfURI
+    },
+
+    annotations: []
   }
 }
 
-const matches = R.curry((pattern, triple) => {
-  let s, p, o, g
-
-  if (!pattern) return;
-
-  if (Array.isArray(pattern)) {
-    [s, p, o, g] = pattern;
-  } else {
-    s = pattern.subject || pattern.s;
-    p = pattern.predicate || pattern.p;
-    o = pattern.object || pattern.o;
-    g = pattern.graph || pattern.g;
-  }
-
-  const parsed = {
-    subject: s,
-    predicate: p,
-    object: o,
-  }
-
-  if (triple.graph || pattern.graph) {
-    parsed.graph = g;
-  }
-
-  let match = true;
-
-  for (const attr of Object.keys(parsed)) {
-    const item = triple[attr]
-        , test = parsed[attr]
-
-    if (!test) continue;
-
-    if (typeof test === 'function') {
-      match = test(item, triple);
-    } else if (Util.isIRI(test)) {
-      match = (
-        item === test ||
-        item === expand(test)
-      )
-    } else {
-      match = item === test;
-    }
-
-    if (!match) break;
-  }
-
-  return match
-})
-
-const matchesType = R.curry(
-  (type, triple) => matches([null, 'rdf:type', type], triple))
-
-function expand(iri) {
-  return Util.expandPrefixedName(iri, prefixes)
-}
 
 module.exports = {
-  $: builder,
+  expand,
+  context,
   prefixes,
   generateNotebook,
-  matches,
-  matchesType,
-  expand
 }
