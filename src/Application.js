@@ -89,13 +89,16 @@ const Root = React.createClass({
     const { store } = this.props
         , AddDocument = require('./components/AddDocument')
         , NotebookList = require('./components/NotebookList')
+        , Notebook = require('./components/Notebook')
 
     return (
       h(Provider, { store }, h('div #main', [
         h('h1', 'Florilegia'),
-        h(AddDocument),
 
+        h(AddDocument),
         h(NotebookList),
+        h('hr'),
+        h(Notebook),
       ]))
     )
   }
