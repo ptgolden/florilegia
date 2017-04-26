@@ -81,6 +81,16 @@ function getAnnotsForNotebook(notebookURI) {
   }
 }
 
+const zeroPad = (places, number) => {
+  let str = number.toString()
+
+  while (str.length < places) {
+    str = '0' + str;
+  }
+
+  return str;
+}
+
 
 function addNotebook(pdfFilename, name, description) {
   pdfFilename = path.resolve(pdfFilename)
@@ -100,7 +110,20 @@ function addNotebook(pdfFilename, name, description) {
   const totalPages = doc.pageCount + 1
 
   return async (dispatch, getState, { pdfDB, annotDB, notebookDB }) => {
-    const opts = { pdfURI, baseURI }
+    const opts = {
+      pdfURI,
+      baseURI,
+      mintAnnotURI(part, i, annot) {
+        return [
+          baseURI,
+          'annot',
+          zeroPad(5, annot.page),
+          '-',
+          zeroPad(5, i),
+          part ? ('/' + part) : ''
+        ].join('')
+      }
+    }
 
     function updateProgress(pageNumber) {
       const progress =
@@ -124,7 +147,7 @@ function addNotebook(pdfFilename, name, description) {
       parseAnnots(pdfFilename, opts),
       new N3.StreamWriter({ format: 'N-Triples' }),
       through.obj(function (trip, enc, cb) {
-        const pageMatch = /"#page=(.*)"\./.exec(trip)
+        const pageMatch = /"#page=(\d+).*\./.exec(trip)
 
         if (pageMatch) {
           updateProgress(pageMatch[1])

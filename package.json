@@ -24,7 +24,7 @@
     "level-sublevel": "^6.6.1",
     "n3": "^0.9.1",
     "normalize.css": "^5.0.0",
-    "pdf2oac": "^5.2.0",
+    "pdf2oac": "^6.0.0",
     "poppler-simple": "^0.2.7",
     "prosemirror": "^0.10.1",
     "pump": "^1.0.2",

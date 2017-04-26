@@ -31,7 +31,8 @@ const context = Object.assign({}, prefixes, {
   target: idOf('oa:hasTarget'),
   body: idOf('oa:hasBody'),
 
-  description: 'dce:description',
+  subject: 'dc:subject',
+  description: 'dc:description',
   label: 'rdfs:label',
   value: 'rdf:value',
 

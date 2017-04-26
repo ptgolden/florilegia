@@ -3,7 +3,6 @@
 const thunk = require('redux-thunk').default
     , levelup = require('level')
     , levelstore = require('level-store')
-    , levelgraph = require('levelgraph')
     , sublevel = require('level-sublevel')
     , { createStore, applyMiddleware, compose } = require('redux')
     , rootReducer = require('./reducers')
